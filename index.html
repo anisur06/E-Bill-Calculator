@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electricity Bill Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121214;
+            color: #e3e3e3;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: #1e1e24;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        h2 {
+            text-align: center;
+            color: #4dadff;
+            margin-bottom: 25px;
+        }
+        .add-appliance-form {
+            background: #252529;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid #333339;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+            min-width: 140px;
+        }
+        .form-group label {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #b3b3b3;
+        }
+        .form-group input {
+            padding: 8px;
+            background-color: #2d2d34;
+            border: 1px solid #44444a;
+            border-radius: 4px;
+            font-size: 0.95em;
+            color: #fff;
+        }
+        .form-group input::placeholder {
+            color: #777;
+        }
+        .btn-add {
+            background-color: #4dadff;
+            color: #121214;
+            border: none;
+            padding: 9px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: background 0.2s;
+        }
+        .btn-add:hover {
+            background-color: #359eff;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333339;
+        }
+        th {
+            background-color: #252529;
+            font-weight: 600;
+            color: #e3e3e3;
+        }
+        .table-input {
+            width: 80px;
+            padding: 6px;
+            background-color: #2d2d34;
+            border: 1px solid #44444a;
+            border-radius: 4px;
+            color: #fff;
+        }
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 0 5px;
+        }
+        .btn-delete:hover {
+            color: #ff4242;
+        }
+        .settings-panel {
+            background: #1a2333;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            border: 1px solid #2b384e;
+        }
+        .results-panel {
+            background: #252529;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid #4dadff;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .total-row {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #4dadff;
+            border-top: 2px solid #333339;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        #customRateContainer {
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        #customRate {
+            background-color: #2d2d34;
+            border: 1px solid #44444a;
+            color: #fff;
+            padding: 5px;
+            border-radius: 4px;
+            width: 70px;
+        }
+        .note-panel {
+            margin-top: 25px;
+            font-size: 0.85em;
+            color: #888892;
+            border-top: 1px solid #333339;
+            padding-top: 15px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Electricity Bill Estimator</h2>
+
+    <div class="add-appliance-form">
+    
+        <div class="form-group">
+            <label for="newWatts">Power (Watts)</label>
+            <input type="number" id="newWatts" placeholder="W" min="0">
+        </div>
+        <div class="form-group">
+            <label for="newHours">Hours / Day</label>
+            <input type="number" id="newHours" placeholder="h" min="0" max="24" step="0.5">
+        </div>
+        <button class="btn-add" onclick="addAppliance()">Add Item</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Appliance</th>
+                <th>Watts</th>
+                <th>Hours / Day</th>
+                <th>Monthly kWh</th>
+                <th style="width: 50px;"></th>
+            </tr>
+        </thead>
+        <tbody id="applianceBody"></tbody>
+    </table>
+
+    <div class="settings-panel">
+        <strong>Billing Method:</strong>
+        <label>
+            <input type="radio" name="calcMethod" value="tier" checked onchange="toggleCustomRate(); calculateBill()"> Standard Tiers
+        </label>
+        <label>
+            <input type="radio" name="calcMethod" value="custom" onchange="toggleCustomRate(); calculateBill()"> Custom Flat Rate
+        </label>
+        
+        <div id="customRateContainer">
+            <label for="customRate">Rate per Unit (৳):</label>
+            <input type="number" id="customRate" value="8.00" step="0.1" min="0" oninput="calculateBill()">
+        </div>
+    </div>
+
+    <div class="results-panel">
+        <div class="result-row">
+            <span>Total Monthly Consumption:</span>
+            <strong id="totalKwh">0 kWh</strong>
+        </div>
+        <div class="result-row">
+            <span>Base Electricity Charge:</span>
+            <span id="baseCharge">৳0.00</span>
+        </div>
+        <div class="result-row">
+            <span>Demand Charge:</span>
+            <span>৳42.00</span>
+        </div>
+        <div class="result-row">
+            <span>VAT (5%):</span>
+            <span id="vatAmount">৳0.00</span>
+        </div>
+        <div class="result-row total-row">
+            <span>Estimated Monthly Bill:</span>
+            <span id="grandTotal">৳0.00</span>
+        </div>
+    </div>
+
+    <div class="note-panel">
+        <strong>Note:</strong> The WZPDCL demand charge is typically ৳42 per Kw of sanctioned load per month.
+    </div>
+</div>
+
+<script>
+    let appliances = [
+        { name: "Desktop Computer", watts: 0, hours: 0 },
+        { name: "Ceiling Fan", watts: 0, hours: 0 },
+        { name: "Table Fan", watts: 0, hours: 0 },
+        { name: "Light Bulb", watts: 0, hours: 0 },
+        { name: "Rice Cooker", watts: 0, hours: 0 },
+        { name: "Laptop", watts: 0, hours: 0 }
+    ];
+
+    const tbody = document.getElementById('applianceBody');
+
+    function renderTable() {
+        tbody.innerHTML = '';
+        appliances.forEach((app, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${app.name}</td>
+                <td><input type="number" class="table-input" value="${app.watts}" min="0" oninput="updateData(${index}, 'watts', this.value)"> W</td>
+                <td><input type="number" class="table-input" value="${app.hours}" min="0" max="24" step="0.5" oninput="updateData(${index}, 'hours', this.value)"> h</td>
+                <td id="kwh-${index}">0.00</td>
+                <td><button class="btn-delete" onclick="deleteAppliance(${index})" title="Remove">×</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+        calculateBill();
+    }
+
+    function addAppliance() {
+        const nameInput = document.getElementById('newName');
+        const wattsInput = document.getElementById('newWatts');
+        const hoursInput = document.getElementById('newHours');
+
+        const name = nameInput.value.trim();
+        const watts = Number(wattsInput.value);
+        const hours = Number(hoursInput.value);
+
+        if (!name || watts < 0 || hours < 0 || hours > 24) {
+            alert("Please provide a valid appliance name, positive wattage, and operating hours between 0 and 24.");
+            return;
+        }
+
+        appliances.push({ name, watts, hours });
+        
+        nameInput.value = '';
+        wattsInput.value = '';
+        hoursInput.value = '';
+
+        renderTable();
+    }
+
+    function deleteAppliance(index) {
+        appliances.splice(index, 1);
+        renderTable();
+    }
+
+    function updateData(index, field, value) {
+        appliances[index][field] = Number(value);
+        calculateBill();
+    }
+
+    function toggleCustomRate() {
+        const method = document.querySelector('input[name="calcMethod"]:checked').value;
+        const container = document.getElementById('customRateContainer');
+        container.style.display = (method === 'custom') ? 'flex' : 'none';
+    }
+
+    function calculateBill() {
+        let totalKwh = 0;
+
+        appliances.forEach((app, index) => {
+            const dailyKwh = (app.watts * app.hours) / 1000;
+            const monthlyKwh = dailyKwh * 30; 
+            totalKwh += monthlyKwh;
+            
+            const element = document.getElementById(`kwh-${index}`);
+            if (element) element.innerText = monthlyKwh.toFixed(2);
+        });
+
+        document.getElementById('totalKwh').innerText = `${totalKwh.toFixed(2)} Units`;
+
+        const method = document.querySelector('input[name="calcMethod"]:checked').value;
+        let baseCharge = 0;
+
+        if (method === 'custom') {
+            const customRate = Number(document.getElementById('customRate').value);
+            baseCharge = totalKwh * customRate;
+        } else {
+            let remaining = totalKwh;
+            
+            if (remaining > 0) {
+                const tierUnits = Math.min(remaining, 75);
+                baseCharge += tierUnits * 5.26;
+                remaining -= tierUnits;
+            }
+            if (remaining > 0) {
+                const tierUnits = Math.min(remaining, 125);
+                baseCharge += tierUnits * 7.20;
+                remaining -= tierUnits;
+            }
+            if (remaining > 0) {
+                const tierUnits = Math.min(remaining, 100);
+                baseCharge += tierUnits * 7.59;
+                remaining -= tierUnits;
+            }
+            if (remaining > 0) {
+                baseCharge += remaining * 8.02;
+            }
+        }
+
+        const demandCharge = 42.00;
+        const subtotal = baseCharge + demandCharge;
+        const vat = subtotal * 0.05; 
+        const grandTotal = subtotal + vat;
+
+        document.getElementById('baseCharge').innerText = `৳${baseCharge.toFixed(2)}`;
+        document.getElementById('vatAmount').innerText = `৳${vat.toFixed(2)}`;
+        document.getElementById('grandTotal').innerText = `৳${Math.round(grandTotal)}`;
+    }
+
+    renderTable();
+</script>
+
+</body>
+</html>
